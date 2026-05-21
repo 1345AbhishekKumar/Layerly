@@ -3,7 +3,8 @@
 import React from 'react';
 import { Layers, Undo, Redo, Save, ImagePlay, Download, Loader2, Maximize, Minimize, PanelRightClose, PanelRightOpen, LogIn } from 'lucide-react';
 import { motion } from 'motion/react';
-import { UserButton, ClerkLoaded, ClerkLoading, Show, SignInButton } from '@clerk/nextjs';
+import { ClerkLoaded, ClerkLoading, Show, SignInButton } from '@clerk/nextjs';
+import { CustomUserDropdown } from './CustomUserDropdown';
 import { cn } from '@/lib/utils';
 import { useEditorStore } from '@/providers/editor-store-provider';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -129,15 +130,7 @@ export function TopNavbar({
           </ClerkLoading>
           <ClerkLoaded>
             <Show when="signed-in">
-              <UserButton 
-                userProfileMode="navigation"
-                userProfileUrl="/profile"
-                appearance={{
-                  elements: {
-                    avatarBox: "w-6 h-6 sm:w-8 sm:h-8"
-                  }
-                }}
-              />
+              <CustomUserDropdown isCompact={isCompact} />
             </Show>
             <Show when="signed-out">
               <SignInButton mode="modal">

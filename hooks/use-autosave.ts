@@ -14,25 +14,13 @@ export function useAutosave(canvas: fabric.Canvas | null, saveHistory: () => voi
     const loadAutosave = async () => {
       try {
         const savedState = await get('cinetext_autosave');
-        if (savedState) {
-          toast('Previous session found', {
-            action: {
-              label: 'Restore',
-              onClick: () => {
-                canvas.loadFromJSON(savedState).then(() => {
-                  canvas.requestRenderAll();
-                  saveHistory(); // ensure history is updated
-                  toast.success('Session restored');
-                });
-              }
-            },
-            cancel: {
-              label: 'Discard',
-              onClick: () => {
-                del('cinetext_autosave');
-              }
-            },
-            duration: 10000,
+        // Only auto-restore if we have a saved state AND the canvas is currently empty
+        if (savedState && canvas.getObjects().length === 0) {
+          const parsedState = typeof savedState === 'string' ? JSON.parse(savedState) : savedState;
+          canvas.loadFromJSON(parsedState).then(() => {
+            canvas.requestRenderAll();
+            saveHistory(); // ensure history is updated
+            toast.success('Restored your previous work');
           });
         }
       } catch (e) {

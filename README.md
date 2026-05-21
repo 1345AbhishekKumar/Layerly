@@ -22,7 +22,7 @@ A powerful, modern web-based design tool that leverages Computer Vision and Gene
 
 ## 🚀 Tech Stack
 
-- **Framework**: [Next.js 15](https://nextjs.org/) (App Router)
+- **Framework**: [Next.js 16](https://nextjs.org/) (App Router)
 - **Canvas Engine**: [Fabric.js](http://fabricjs.com/)
 - **Machine Learning**: [@imgly/background-removal](https://github.com/imgly/background-removal-js) (Local WASM/ONNX)
 - **Generative AI**: [@google/genai](https://ai.google.dev/) (Gemini 2.0 Flash)
@@ -41,8 +41,8 @@ A powerful, modern web-based design tool that leverages Computer Vision and Gene
 
 1. **Clone the repository**:
    ```bash
-   git clone .....
-   cd text-behind-image-ai
+   git clone https://github.com/1345AbhishekKumar/Layerly.git
+   cd layerly
    ```
 
 2. **Install dependencies**:
@@ -55,7 +55,7 @@ A powerful, modern web-based design tool that leverages Computer Vision and Gene
 3. **Environment Setup**:
    Create a `.env.local` file in the root directory and add your Google Gemini API Key:
    ```env
-   NEXT_PUBLIC_GEMINI_API_KEY=your_gemini_api_key_here
+   GEMINI_API_KEY=
    ```
 
 4. **Run the development server**:
@@ -76,6 +76,4 @@ A powerful, modern web-based design tool that leverages Computer Vision and Gene
 6. **Export**: Click the Export button to download your masterpiece.
 
 
-# CineText
-# Layerly---Text-Behind-Image
 # Layerly

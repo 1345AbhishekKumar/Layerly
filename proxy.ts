@@ -8,6 +8,7 @@ const isPublicRoute = createRouteMatcher([
   "/verify(.*)",
   "/sso-callback(.*)",
   "/api(.*)",
+  "/profile(.*)",
 ]);
 
 const isGuestRoute = createRouteMatcher([

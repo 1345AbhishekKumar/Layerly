@@ -39,15 +39,16 @@ export function useHistory(canvas: fabric.Canvas | null) {
     const previousState = history[previousIndex];
 
     setHistoryIndex(previousIndex);
-    
-    canvas.loadFromJSON(previousState).then(() => {
+
+    const parsedState = JSON.parse(previousState);
+    canvas.loadFromJSON(parsedState).then(() => {
       canvas.renderAll();
       canvas.fire('selection:cleared');
       isProcessingRef.current = false;
     });
-  }, [canvas, history, historyIndex]);
+    }, [canvas, history, historyIndex]);
 
-  const redo = useCallback(() => {
+    const redo = useCallback(() => {
     if (!canvas || historyIndex >= history.length - 1) return;
 
     isProcessingRef.current = true;
@@ -56,13 +57,13 @@ export function useHistory(canvas: fabric.Canvas | null) {
 
     setHistoryIndex(nextIndex);
 
-    canvas.loadFromJSON(nextState).then(() => {
+    const parsedState = JSON.parse(nextState);
+    canvas.loadFromJSON(parsedState).then(() => {
       canvas.renderAll();
       canvas.fire('selection:cleared');
       isProcessingRef.current = false;
     });
-
-  }, [canvas, history, historyIndex]);
+    }, [canvas, history, historyIndex]);
 
   const clearHistory = useCallback(() => {
     setHistory([]);
