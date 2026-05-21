@@ -1,9 +1,11 @@
 # Text Behind Image AI Editor
 
+![Layerly App Preview](public/logoo.png)
+
 A powerful, modern web-based design tool that leverages Computer Vision and Generative AI to create professional "text behind subject" posters in seconds.
 
-![CineText App Preview](public/image.png) 
-![CineText App Preview](public\cinetext-1778619883551.png) 
+![Layerly App Preview](public/image.png)
+![Layerly App Preview](public/cinetext-1778619883551.png)
 
 ## ✨ Features
 
