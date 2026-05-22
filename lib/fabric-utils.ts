@@ -76,3 +76,38 @@ export const enforceLayerOrder = (canvas: fabric.Canvas) => {
     canvas.bringObjectToFront(fgImg);
   }
 };
+
+// Mathematically re-centers the entire composition as a unit
+export const reCenterComposition = (canvas: fabric.Canvas) => {
+  const objects = canvas.getObjects() as CustomFabricObject[];
+  const cw = canvas.width || 0;
+  const ch = canvas.height || 0;
+  
+  // Use the BASE_IMAGE as the anchor for the entire composition
+  const anchor = objects.find(o => o.id === LAYER_IDS.BASE_IMAGE);
+  if (!anchor) return;
+
+  const dx = (cw / 2) - (anchor.left || 0);
+  const dy = (ch / 2) - (anchor.top || 0);
+
+  // If the shift is negligible, don't waste cycles
+  if (Math.abs(dx) < 0.1 && Math.abs(dy) < 0.1) return;
+
+  objects.forEach(obj => {
+    obj.set({
+      left: (obj.left || 0) + dx,
+      top: (obj.top || 0) + dy
+    });
+
+    if (obj.clipPath && obj.clipPath.absolutePositioned) {
+      obj.clipPath.set({
+        left: (obj.clipPath.left || 0) + dx,
+        top: (obj.clipPath.top || 0) + dy
+      });
+    }
+
+    obj.setCoords();
+  });
+  
+  canvas.requestRenderAll();
+};

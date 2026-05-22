@@ -37,7 +37,7 @@ export function WorkspaceCanvas({ canvasRef, containerRef, onDropFiles, bgProces
       <input {...getInputProps()} />
       
       <div ref={containerRef} className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center bg-neutral-900/30">
-        <canvas ref={canvasRef as any} className="absolute inline-block" />
+        <canvas ref={canvasRef as any} className="absolute top-0 left-0 inline-block" />
       </div>
       
       {/* Drag overlay */}

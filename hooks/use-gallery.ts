@@ -46,19 +46,33 @@ export function useGallery() {
 
   // 2. Saving data with useMutation
   const saveMutation = useMutation({
-    mutationFn: async ({ dataUrl, canvasState }: { dataUrl: string; canvasState?: any }) => {
-      const newImage: GalleryImage = {
-        id: crypto.randomUUID(),
-        dataUrl,
-        canvasState,
-        createdAt: Date.now(),
-      };
-      
+    mutationFn: async ({ id, dataUrl, canvasState }: { id?: string; dataUrl: string; canvasState?: any }) => {
       const currentImages = queryClient.getQueryData<GalleryImage[]>(['gallery']) || [];
-      const updatedImages = [newImage, ...currentImages];
+      
+      let updatedImages: GalleryImage[];
+      let finalId = id;
+
+      if (id) {
+        // Update existing image
+        updatedImages = currentImages.map(img => 
+          img.id === id 
+            ? { ...img, dataUrl, canvasState, updatedAt: Date.now() } 
+            : img
+        );
+      } else {
+        // Create new image
+        finalId = crypto.randomUUID();
+        const newImage: GalleryImage = {
+          id: finalId,
+          dataUrl,
+          canvasState,
+          createdAt: Date.now(),
+        };
+        updatedImages = [newImage, ...currentImages];
+      }
       
       await set(GALLERY_KEY, updatedImages);
-      return updatedImages;
+      return { updatedImages, id: finalId };
     },
     onSuccess: () => {
       // Invalidate the gallery query to trigger a background refetch 
@@ -69,9 +83,10 @@ export function useGallery() {
 
   // 3. Deleting data with useMutation
   const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (idOrIds: string | string[]) => {
       const currentImages = queryClient.getQueryData<GalleryImage[]>(['gallery']) || [];
-      const updatedImages = currentImages.filter(img => img.id !== id);
+      const idsToDelete = Array.isArray(idOrIds) ? idOrIds : [idOrIds];
+      const updatedImages = currentImages.filter(img => !idsToDelete.includes(img.id));
       
       await set(GALLERY_KEY, updatedImages);
       return updatedImages;
@@ -84,8 +99,8 @@ export function useGallery() {
   return { 
     images, 
     isLoading,
-    saveImageToGallery: (dataUrl: string, canvasState?: any) => 
-      saveMutation.mutateAsync({ dataUrl, canvasState }), 
-    deleteImage: (id: string) => deleteMutation.mutateAsync(id) 
+    saveImageToGallery: (dataUrl: string, canvasState?: any, id?: string) => 
+      saveMutation.mutateAsync({ dataUrl, canvasState, id }), 
+    deleteImage: (idOrIds: string | string[]) => deleteMutation.mutateAsync(idOrIds) 
   };
 }

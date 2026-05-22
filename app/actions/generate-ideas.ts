@@ -62,9 +62,13 @@ export async function generateIdeasAction(base64Data: string) {
       }
     });
     
-    return JSON.parse(response.text || "{}");
-  } catch (error) {
+    let text = response.text || "{}";
+    // Sometimes Gemini wraps JSON in markdown backticks even with responseMimeType
+    text = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    return JSON.parse(text);
+  } catch (error: any) {
     console.error("Error generating ideas:", error);
-    throw new Error("Failed to generate ideas");
+    // Pass the actual error message to the client instead of masking it
+    throw new Error(error?.message || "Failed to generate ideas");
   }
 }

@@ -20,6 +20,7 @@ export interface EditorState {
   focusState: FocusState;
   activeTab: EditorTab;
   isCompact: boolean;
+  currentGalleryId: string | null;
 }
 
 export interface EditorActions {
@@ -35,6 +36,7 @@ export interface EditorActions {
   setHoverState: (hoverState: Partial<HoverState> | ((prev: HoverState) => HoverState)) => void;
   setFocusState: (focusState: Partial<FocusState> | ((prev: FocusState) => FocusState)) => void;
   setActiveTab: (tab: EditorTab) => void;
+  setCurrentGalleryId: (id: string | null) => void;
 }
 
 export type EditorStore = EditorState & EditorActions;
@@ -53,6 +55,7 @@ export const defaultInitState: EditorState = {
   focusState: { top: false, left: false, right: false, bottom: false },
   activeTab: 'properties',
   isCompact: true,
+  currentGalleryId: null,
 };
 
 export const createEditorStore = (initState: EditorState = defaultInitState) => {
@@ -76,5 +79,6 @@ export const createEditorStore = (initState: EditorState = defaultInitState) => 
         focusState: typeof update === 'function' ? update(state.focusState) : { ...state.focusState, ...update } 
       })),
     setActiveTab: (activeTab) => set({ activeTab }),
+    setCurrentGalleryId: (currentGalleryId) => set({ currentGalleryId }),
   }));
 };

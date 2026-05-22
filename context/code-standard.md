@@ -36,7 +36,6 @@
 ## Data and Storage
 
 - Project metadata and relationships belong in PostgreSQL via Prisma.
-- 
 - Do not store large generated content directly in the database.
 - Task run records are first-class relational data — treat ownership and run IDs as verified before any token issuance.
 
@@ -44,5 +43,5 @@
 
 - `lib/` — shared infrastructure: Prisma client, auth helpers, utilities.
 - `components/` — UI composition only; no business logic.
-- `app/api/` — route handlers for auth, triggering, and persistence.
+- `app/api/` — route handlers.
 - Name files after the responsibility they contain, not the technology.

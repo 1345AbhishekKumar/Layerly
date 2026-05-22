@@ -12,7 +12,7 @@ import { useAutosave } from '../hooks/use-autosave';
 import { useShortcuts } from '../hooks/use-shortcuts';
 import { useGallery } from '../hooks/use-gallery';
 import { useIsMobile } from '../hooks/use-mobile';
-import { addTextToCanvas, LAYER_IDS, enforceLayerOrder } from '../lib/fabric-utils';
+import { addTextToCanvas, LAYER_IDS, enforceLayerOrder, reCenterComposition } from '../lib/fabric-utils';
 import { CustomFabricObject } from '../types/editor';
 
 import { EditorStoreProvider, useEditorStore } from '../providers/editor-store-provider';
@@ -37,6 +37,8 @@ function EditorInner() {
   const setClipboard = useEditorStore((s) => s.setClipboard);
   const setHoverState = useEditorStore((s) => s.setHoverState);
   const isCompact = useEditorStore((s) => s.isCompact);
+  const currentGalleryId = useEditorStore((s) => s.currentGalleryId);
+  const setCurrentGalleryId = useEditorStore((s) => s.setCurrentGalleryId);
 
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -44,8 +46,56 @@ function EditorInner() {
   
   const { removeBackground, isProcessing: bgProcessing, progress } = useBackgroundRemoval();
   const { undo, redo, saveHistory, canUndo, canRedo, clearHistory } = useHistory(canvas);
-  const { clearAutosave } = useAutosave(canvas, saveHistory);
   const { images, saveImageToGallery, deleteImage, isLoading: isGalleryLoading } = useGallery();
+
+  const handleSaveToGallery = useCallback(async (isAuto = false) => {
+    if (!canvas || canvas.getObjects().length === 0) return;
+    
+    let options: any = { format: 'jpeg', quality: 0.6, multiplier: 0.5 };
+    const baseImg = canvas.getObjects().find((obj: any) => obj.id === LAYER_IDS.BASE_IMAGE);
+    
+    if (baseImg) {
+      options = {
+        ...options,
+        left: baseImg.left!, top: baseImg.top!,
+        width: baseImg.width! * baseImg.scaleX!,
+        height: baseImg.height! * baseImg.scaleY!,
+      };
+    }
+    
+    try {
+      const thumbUrl = canvas.toDataURL(options);
+      const result = await saveImageToGallery(thumbUrl, canvas.toObject(HISTORY_STORE_PROPS), currentGalleryId || undefined);
+      
+      if (!currentGalleryId && result?.id) {
+        setCurrentGalleryId(result.id);
+      }
+      
+      if (!isAuto) toast.success('Saved to gallery!');
+    } catch (e) {
+      console.error('Save to gallery failed', e);
+      if (!isAuto) toast.error('Save failed. Make sure you only use local images to avoid CORS issues.');
+    }
+  }, [canvas, currentGalleryId, saveImageToGallery, setCurrentGalleryId]);
+
+  const handleLoadFromGallery = useCallback((image: any) => {
+    if (!canvas || !image.canvasState) return;
+    setCurrentGalleryId(image.id);
+    canvas.loadFromJSON(image.canvasState).then(() => {
+      reCenterComposition(canvas);
+      canvas.renderAll();
+      saveHistory(); 
+      setIsGalleryOpen(false);
+    });
+  }, [canvas, saveHistory, setIsGalleryOpen, setCurrentGalleryId]);
+
+  const handleGalleryAutoSave = useCallback(() => {
+    if (currentGalleryId) {
+      handleSaveToGallery(true);
+    }
+  }, [currentGalleryId, handleSaveToGallery]);
+
+  const { clearAutosave } = useAutosave(canvas, saveHistory, handleGalleryAutoSave);
 
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
@@ -182,17 +232,27 @@ function EditorInner() {
     initCanvas.on('selection:updated', () => setActiveObject(initCanvas.getActiveObject() || null));
     initCanvas.on('selection:cleared', () => setActiveObject(null));
 
-    let prevWidth = containerRef.current.clientWidth;
-    let prevHeight = containerRef.current.clientHeight;
+    let prevWidth = 0;
+    let prevHeight = 0;
 
     const resizeObserver = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
+      
+      // Initialize on first run
+      if (prevWidth === 0 || prevHeight === 0) {
+        prevWidth = width;
+        prevHeight = height;
+        initCanvas.setDimensions({ width, height });
+        return;
+      }
+
       const dx = (width - prevWidth) / 2;
       const dy = (height - prevHeight) / 2;
       
       initCanvas.setDimensions({ width, height });
 
-      if (dx !== 0 || dy !== 0) {
+      // Only shift if there is a meaningful change (> 0.5px) to avoid sub-pixel jitter
+      if (Math.abs(dx) > 0.5 || Math.abs(dy) > 0.5) {
         initCanvas.getObjects().forEach(obj => {
           obj.set({
             left: (obj.left || 0) + dx,
@@ -228,6 +288,7 @@ function EditorInner() {
     if (!acceptedFiles.length || !canvas) return;
     const file = acceptedFiles[0];
     
+    setCurrentGalleryId(null);
     clearAutosave();
     canvas.clear();
     clearHistory();
@@ -278,7 +339,7 @@ function EditorInner() {
     };
     reader.readAsDataURL(file);
     
-  }, [canvas, removeBackground, clearHistory, clearAutosave]);
+  }, [canvas, removeBackground, clearHistory, clearAutosave, setCurrentGalleryId]);
 
   const handleManualUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -292,40 +353,6 @@ function EditorInner() {
       return;
     }
     setIsExportModalOpen(true);
-  };
-
-  const handleSaveToGallery = () => {
-    if (!canvas || canvas.getObjects().length === 0) return;
-    
-    let options: any = { format: 'jpeg', quality: 0.6, multiplier: 0.5 };
-    const baseImg = canvas.getObjects().find((obj: any) => obj.id === LAYER_IDS.BASE_IMAGE);
-    
-    if (baseImg) {
-      options = {
-        ...options,
-        left: baseImg.left!, top: baseImg.top!,
-        width: baseImg.width! * baseImg.scaleX!,
-        height: baseImg.height! * baseImg.scaleY!,
-      };
-    }
-    
-    try {
-      const thumbUrl = canvas.toDataURL(options);
-      saveImageToGallery(thumbUrl, canvas.toObject(HISTORY_STORE_PROPS));
-      toast.success('Saved to gallery!');
-    } catch (e) {
-      console.error('Save to gallery failed', e);
-      toast.error('Save failed. Make sure you only use local images to avoid CORS issues.');
-    }
-  };
-
-  const handleLoadFromGallery = (image: any) => {
-    if (!canvas || !image.canvasState) return;
-    canvas.loadFromJSON(image.canvasState).then(() => {
-      canvas.renderAll();
-      saveHistory(); 
-      setIsGalleryOpen(false);
-    });
   };
 
   const copySelected = useCallback(() => {
